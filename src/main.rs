@@ -1,4 +1,10 @@
-use std::process::{Child, Command};
+use std::{
+    fs::File,
+    io::BufReader,
+    process::{Child, Command},
+};
+
+use serde::{Deserialize, Serialize};
 
 // TODO: Stop having to manually convert all str to Strings
 
@@ -7,6 +13,25 @@ fn main() {
     acs.print();
     acs.start();
     acs.stop();
+
+    let json = r#"
+    {
+        "name": "newAcs",
+        "cmd": "./a.out",
+        "args": [
+            "JSON",
+            "North",
+            "High"
+        ]
+    }
+    "#;
+
+    // let acs_json: DockrJson = serde_json::from_str(json).unwrap();
+    let file = File::open("acs.json").expect("Failed to open JSON file");
+    let rdr = BufReader::new(file);
+    let acs_json: DockrJson = serde_json::from_reader(rdr).expect("Failed to parse JSON from file");
+    let new_acs = DockrModule::from(acs_json);
+    new_acs.print();
 }
 
 struct DockrModule {
@@ -55,4 +80,36 @@ impl DockrModule {
         print!("\n");
         println!("Module Process Running: {}", self.proc.is_some());
     }
+}
+
+impl From<DockrJson> for DockrModule {
+    fn from(json: DockrJson) -> Self {
+        DockrModule {
+            name: json.name,
+            cmd: json.cmd,
+            args: json.args,
+            proc: None,
+        }
+    }
+}
+
+// impl From<&str> for DockrModule {
+//     fn from(path: &str) -> Self {
+//         let file = File
+//     }
+// }
+
+impl From<File> for DockrModule {
+    fn from(file: File) -> Result<Self, serde_json::Error> {
+        let rdr = BufReader::new(file);
+        let json: DockrJson = serde_json::from_reader(rdr)?;
+        DockrModule::from(json);
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct DockrJson {
+    name: String,
+    cmd: String,
+    args: Vec<String>,
 }

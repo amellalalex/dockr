@@ -1,0 +1,9 @@
+{
+    "name": "acs",
+    "cmd": "./a.out",
+    "args": [
+        "JSON",
+        "East",
+        "Metric"
+    ]
+}
