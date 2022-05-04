@@ -4,16 +4,9 @@ use std::process::{Child, Command};
 
 fn main() {
     let mut acs = DockrModule::new("ACS", "./acs.out", vec!["JSON", "North", "HIGH"]);
-
     acs.print();
-
     acs.start();
-
-    acs.print();
-
     acs.stop();
-
-    acs.print();
 }
 
 struct DockrModule {
