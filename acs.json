@@ -1,6 +1,6 @@
 {
-    "name": "acs",
-    "cmd": "./a.out",
+    "name": "ACS module",
+    "cmd": "./acs.out",
     "args": [
         "JSON",
         "East",

@@ -1,0 +1,8 @@
+{
+    "name": "Payload Module",
+    "cmd": "./camera.sh",
+    "args": [
+        "1260x768",
+        "f2.0"
+    ]
+}
