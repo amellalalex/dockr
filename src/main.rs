@@ -1,44 +1,38 @@
+use core::fmt;
 use std::{
     fs::File,
     io::BufReader,
-    io::Result,
-    num::ParseIntError,
     process::{Child, Command},
 };
 
 use serde::{Deserialize, Serialize};
 
-// TODO: Stop having to manually convert all str to Strings
-
-// fn main() {
-//     let mut acs = DockrModule::new("ACS", "./acs.out", vec!["JSON", "North", "HIGH"]);
-//     acs.print();
-//     acs.start();
-//     acs.stop();
-
-//     let json = r#"
-//     {
-//         "name": "newAcs",
-//         "cmd": "./a.out",
-//         "args": [
-//             "JSON",
-//             "North",
-//             "High"
-//         ]
-//     }
-//     "#;
-
-//     // let acs_json: DockrJson = serde_json::from_str(json).unwrap();
-//     let file = File::open("acs.json").expect("Failed to open JSON file");
-//     let rdr = BufReader::new(file);
-//     let acs_json: DockrJson = serde_json::from_reader(rdr).expect("Failed to parse JSON from file");
-//     let new_acs = DockrModule::from(acs_json);
-//     new_acs.print();
-// }
-
 fn main() {
-    let acs = DockrModule::new();
-    let file = File::open("pay.json");
+    // let acs = DockrModule::new();
+    // let pay = DockrModule::open("pay.json")
+    //     .expect("Unable to open module config file")
+    //     .expect("msg");
+}
+
+type Result<T> = std::result::Result<T, DockrError>;
+
+#[derive(Debug, Clone)]
+struct DockrError {
+    msg: String,
+}
+
+impl fmt::Display for DockrError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Generic Dockr Error")
+    }
+}
+
+impl From<std::io::Error> for DockrError {
+    fn from(err: std::io::Error) -> Self {
+        match err {
+            Err(err) => 
+        }
+    }
 }
 
 struct DockrModule {
@@ -58,22 +52,21 @@ impl DockrModule {
         }
     }
 
-    fn open(path: &str) -> Result<Result<DockrModule, serde_json::Error>, std::io::Error> {
-        File::open(path).map(|f| {
-            let rdr = BufReader::new(f);
-            serde_json::from_reader(rdr).map(|json| {
-                let module: DockrJson = json;
-                DockrModule::from(module)
-            })
-        })
+    // fn open(path: &str) -> Result<Result<Option<DockrModule>, serde_json::Error>, std::io::Error> {
+    //     File::open(path).map(|f| {
+    //         let rdr = BufReader::new(f);
+    //         serde_json::from_reader(rdr).map(|json| {
+    //             let module: DockrJson = json;
+    //             Some(DockrModule::from(module))
+    //         })
+    //     })
+    // }
 
-        // if file.is_err() {
-        //     return None;
-        // }
-        // Ok(file);
-
-        // let rdr = BufReader::new(file);
-        // let json = serde_json::from_reader(rdr);
+    fn open(path: &str) -> Result<DockrModule> {
+        let file = File::open(path).map_err(|_| DockrError)?;
+        let rdr = BufReader::new(file);
+        let json: DockrJson = serde_json::from_reader(rdr).map_err(|_| DockrError)?;
+        Ok(DockrModule::from(json))
     }
 
     fn start(&mut self) {
