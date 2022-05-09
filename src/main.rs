@@ -1,39 +1,36 @@
 use core::fmt;
 use std::{
+    error::Error,
     fs::File,
     io::BufReader,
+    ops::Deref,
     process::{Child, Command},
 };
 
 use serde::{Deserialize, Serialize};
 
 fn main() {
-    // let acs = DockrModule::new();
-    // let pay = DockrModule::open("pay.json")
-    //     .expect("Unable to open module config file")
-    //     .expect("msg");
-}
+    let acs = DockrModule::open("acs.json").expect("Failed to open module config file");
+    let pay = DockrModule::open("pay.json").expect("Failed to open module config file");
 
-type Result<T> = std::result::Result<T, DockrError>;
+    // Start modules
+    let mut modules = vec![acs, pay];
+    for x in &mut modules {
+        x.start();
+    }
 
-#[derive(Debug, Clone)]
-struct DockrError {
-    msg: String,
-}
+    // Print modules
+    for x in &mut modules {
+        x.print();
+    }
 
-impl fmt::Display for DockrError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Generic Dockr Error")
+    // Stop modules
+    for x in &mut modules {
+        x.stop();
     }
 }
 
-impl From<std::io::Error> for DockrError {
-    fn from(err: std::io::Error) -> Self {
-        match err {
-            Err(err) => 
-        }
-    }
-}
+// type Result<T> = std::result::Result<T, DockrError>;
 
 struct DockrModule {
     name: String,
@@ -62,23 +59,31 @@ impl DockrModule {
     //     })
     // }
 
-    fn open(path: &str) -> Result<DockrModule> {
-        let file = File::open(path).map_err(|_| DockrError)?;
+    fn open(path: &str) -> Result<DockrModule, Box<dyn Error>> {
+        let file = File::open(path)?;
         let rdr = BufReader::new(file);
-        let json: DockrJson = serde_json::from_reader(rdr).map_err(|_| DockrError)?;
+        let json: DockrJson = serde_json::from_reader(rdr)?;
         Ok(DockrModule::from(json))
     }
 
-    fn start(&mut self) {
+    // fn start(&mut self) {
+    //     println!("Starting module...");
+    //     self.proc = Some(
+    //         Command::new(self.cmd.as_str())
+    //             .args(self.args.deref())
+    //             .spawn()
+    //             .expect("failed to start module"),
+    //     )
+    // }
+
+    fn start(&mut self) -> std::io::Result<Child> {
         println!("Starting module...");
-        let args = self.args.clone();
-        self.proc = Some(
-            Command::new(self.cmd.as_str())
-                .args(args)
-                .spawn()
-                .expect("failed to start module"),
-        );
+        Command::new(self.cmd.as_str())
+            .args(self.args.deref())
+            .spawn()
+            .map(|p| Some(p))
     }
+
     fn stop(&mut self) {
         // self.proc.wait().expect("Failed to wait on child");
         self.proc
