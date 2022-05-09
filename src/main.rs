@@ -1,4 +1,3 @@
-use core::fmt;
 use std::{
     error::Error,
     fs::File,
@@ -9,14 +8,14 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-fn main() {
+fn main() -> Result<(), Box<dyn Error>> {
     let acs = DockrModule::open("acs.json").expect("Failed to open module config file");
     let pay = DockrModule::open("pay.json").expect("Failed to open module config file");
 
     // Start modules
     let mut modules = vec![acs, pay];
     for x in &mut modules {
-        x.start();
+        x.start()?;
     }
 
     // Print modules
@@ -26,8 +25,10 @@ fn main() {
 
     // Stop modules
     for x in &mut modules {
-        x.stop();
+        x.stop()?;
     }
+
+    Ok(())
 }
 
 // type Result<T> = std::result::Result<T, DockrError>;
@@ -66,32 +67,32 @@ impl DockrModule {
         Ok(DockrModule::from(json))
     }
 
-    // fn start(&mut self) {
-    //     println!("Starting module...");
-    //     self.proc = Some(
-    //         Command::new(self.cmd.as_str())
-    //             .args(self.args.deref())
-    //             .spawn()
-    //             .expect("failed to start module"),
-    //     )
-    // }
-
-    fn start(&mut self) -> std::io::Result<Child> {
+    fn start(&mut self) -> Result<(), Box<dyn Error>> {
         println!("Starting module...");
-        Command::new(self.cmd.as_str())
-            .args(self.args.deref())
-            .spawn()
-            .map(|p| Some(p))
+        self.proc = Some(
+            Command::new(self.cmd.as_str())
+                .args(self.args.deref())
+                .spawn()?,
+        );
+        Ok(())
     }
 
-    fn stop(&mut self) {
+    // fn start(&mut self) -> Result<(), Box<dyn Error>> {
+    //     let child = Command::new(self.cmd.as_str())
+    //         .args(self.args.deref())
+    //         .spawn()?;
+    //     Ok(())
+    // }
+
+    fn stop(&mut self) -> Result<(), Box<dyn Error>> {
         // self.proc.wait().expect("Failed to wait on child");
-        self.proc
-            .as_mut()
-            .unwrap()
-            .wait()
-            .expect("Failed to wait on child");
+        match self.proc.as_ref() {
+            Some(_) => println!("got some"),
+            None => println!("got none"),
+        }
+        self.proc.as_mut().unwrap().wait()?;
         println!("Stopped module successfully!");
+        Ok(())
     }
     fn print(&self) {
         println!("Module: {}", self.name);
