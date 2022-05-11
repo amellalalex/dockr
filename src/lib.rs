@@ -6,6 +6,7 @@ use std::{
     process::{Child, Command},
 };
 
+#[derive(Debug)]
 pub struct DockrModule {
     name: String,
     cmd: String,
@@ -31,6 +32,15 @@ impl DockrModule {
         }
     }
 
+    pub fn create(name: &str, cmd: &str, args: Vec<&str>) -> DockrModule {
+        DockrModule {
+            name: name.to_string(),
+            cmd: cmd.to_string(),
+            args: args.into_iter().map(|arg| arg.to_string()).collect(),
+            proc: None,
+        }
+    }
+
     pub fn open(path: &str) -> Result<DockrModule, Box<dyn std::error::Error>> {
         let file = File::open(path)?;
         let rdr = BufReader::new(file);
@@ -43,7 +53,6 @@ impl DockrModule {
         println!("Starting {} ...", self.name);
         self.proc = Some(
             Command::new(self.cmd.as_str())
-                // .args(self.args.deref())
                 .args(self.args.deref())
                 .spawn()?,
         );

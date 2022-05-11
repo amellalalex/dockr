@@ -1,0 +1,9 @@
+{
+    "name": "test module",
+    "cmd": "./run_test_module.sh",
+    "args": [
+        "arg1",
+        "arg2",
+        "arg3"
+    ]
+}
