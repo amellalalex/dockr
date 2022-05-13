@@ -70,6 +70,12 @@ impl DockrModule {
         Ok(())
     }
 
+    pub fn run(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        self.start()?;
+        self.stop()?;
+        Ok(())
+    }
+
     pub fn print(&self) {
         println!("Module: {}", self.name);
         println!("Module Command: {}", self.cmd);
