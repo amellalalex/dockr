@@ -126,6 +126,33 @@ impl Collection {
         Collection { modules }
     }
 
+    pub fn start_all(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        for x in self.modules.iter_mut() {
+            x.start()?;
+        }
+        Ok(())
+    }
+
+    pub fn stop_all(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        for module in self.modules.iter_mut() {
+            if let Some(child) = module.proc.as_mut() {
+                if let Some(status) = child.try_wait()? {
+                    println!("module exited with status {status}");
+                    module.proc = None;
+                } else {
+                    println!("Did not stop yet");
+                }
+            }
+
+            match module {
+                Module { proc: None, .. } => println!("great"),
+                _ => println!("nothin ado"),
+            }
+        }
+
+        Ok(())
+    }
+
     pub fn run_all(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         for x in self.modules.iter_mut() {
             x.start()?;
