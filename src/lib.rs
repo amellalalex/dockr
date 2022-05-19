@@ -7,24 +7,24 @@ use std::{
 };
 
 #[derive(Debug)]
-pub struct DockrModule {
+pub struct Module {
     name: String,
     cmd: String,
     args: Vec<String>,
     proc: Option<Child>,
 }
 
-impl PartialEq for DockrModule {
+impl PartialEq for Module {
     fn eq(&self, other: &Self) -> bool {
         self.name == other.name && self.cmd == other.cmd && self.args == other.args
     }
 }
 
-impl Eq for DockrModule {}
+impl Eq for Module {}
 
-impl DockrModule {
-    pub fn new() -> DockrModule {
-        DockrModule {
+impl Module {
+    pub fn new() -> Module {
+        Module {
             name: String::new(),
             cmd: String::new(),
             args: Vec::new(),
@@ -32,8 +32,8 @@ impl DockrModule {
         }
     }
 
-    pub fn create(name: &str, cmd: &str, args: Vec<&str>) -> DockrModule {
-        DockrModule {
+    pub fn create(name: &str, cmd: &str, args: Vec<&str>) -> Module {
+        Module {
             name: name.to_string(),
             cmd: cmd.to_string(),
             args: args.into_iter().map(|arg| arg.to_string()).collect(),
@@ -41,11 +41,11 @@ impl DockrModule {
         }
     }
 
-    pub fn open(path: &str) -> Result<DockrModule, Box<dyn std::error::Error>> {
+    pub fn open(path: &str) -> Result<Module, Box<dyn std::error::Error>> {
         let file = File::open(path)?;
         let rdr = BufReader::new(file);
         let json: DockrJson = serde_json::from_reader(rdr)?;
-        Ok(DockrModule::from(json))
+        Ok(Module::from(json))
     }
 
     pub fn start(&mut self) -> Result<(), Box<dyn std::error::Error>> {
@@ -76,13 +76,6 @@ impl DockrModule {
         Ok(())
     }
 
-    pub async fn keep_alive(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        loop {
-            self.start()?;
-            self.stop()?;
-        }
-    }
-
     pub fn print(&self) {
         println!("Module: {}", self.name);
         println!("Module Command: {}", self.cmd);
@@ -102,13 +95,13 @@ impl DockrModule {
     }
 
     pub fn is_blank(&self) -> bool {
-        DockrModule::new() == *self
+        Module::new() == *self
     }
 }
 
-impl From<DockrJson> for DockrModule {
+impl From<DockrJson> for Module {
     fn from(json: DockrJson) -> Self {
-        DockrModule {
+        Module {
             name: json.name,
             cmd: json.cmd,
             args: json.args,
@@ -122,4 +115,34 @@ struct DockrJson {
     name: String,
     cmd: String,
     args: Vec<String>,
+}
+
+pub struct Collection {
+    modules: Vec<Module>,
+}
+
+impl Collection {
+    pub fn new(modules: Vec<Module>) -> Collection {
+        Collection { modules }
+    }
+
+    pub fn run_all(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        for x in self.modules.iter_mut() {
+            x.start()?;
+        }
+        for x in self.modules.iter_mut() {
+            x.stop()?;
+        }
+        Ok(())
+    }
+}
+
+#[macro_export]
+macro_rules! collection {
+    ($x:expr) => {
+        Collection::new(vec![$x])
+    };
+    ($x:expr, $($y:expr),+) => (
+        dockr::Collection::new(vec![$x, $($y),+])
+    )
 }
