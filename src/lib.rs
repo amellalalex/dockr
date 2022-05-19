@@ -66,7 +66,7 @@ impl DockrModule {
             None => println!("got none"),
         }
         self.proc.as_mut().unwrap().wait()?;
-        println!("Stopped module successfully!");
+        println!("Stopped {} successfully!", self.name);
         Ok(())
     }
 
@@ -74,6 +74,13 @@ impl DockrModule {
         self.start()?;
         self.stop()?;
         Ok(())
+    }
+
+    pub async fn keep_alive(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        loop {
+            self.start()?;
+            self.stop()?;
+        }
     }
 
     pub fn print(&self) {
