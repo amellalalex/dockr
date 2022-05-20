@@ -6,6 +6,12 @@ use std::{
     process::{Child, Command},
 };
 
+// TODO: Put settings into JSON file
+// Settings
+const STOP_TIMEOUT: u32 = 3; // in seconds
+const STOP_REFRESH_DELAY_SECS: u32 = 1;
+const STOP_REFRESH_DELAY_NANO: u32 = 0;
+
 #[derive(Debug)]
 pub struct Module {
     name: String,
@@ -59,14 +65,19 @@ impl Module {
         Ok(())
     }
 
-    pub fn stop(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        // self.proc.wait().expect("Failed to wait on child");
-        match self.proc.as_ref() {
-            Some(_) => println!("got some"),
-            None => println!("got none"),
+    pub fn wait(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        if let Some(proc) = self.proc.as_mut() {
+            proc.wait()?;
         }
-        self.proc.as_mut().unwrap().wait()?;
-        println!("Stopped {} successfully!", self.name);
+        println!("Done waiting on {} !", self.name);
+        Ok(())
+    }
+
+    // TODO: Finish stop func
+    pub fn stop(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        if let Some(proc) = self.proc.as_mut() {
+            if let Some(status) = proc.try_wait()? {}
+        }
         Ok(())
     }
 
