@@ -1,9 +1,9 @@
-use dockr::DockrModule;
+use dockr::Module;
 
 #[test]
 fn load_module() {
-    let test = DockrModule::open("tests/test.json").unwrap();
-    let expected = DockrModule::create(
+    let test = Module::open("tests/test.json").unwrap();
+    let expected = Module::create(
         "test module",
         "./run_test_module.sh",
         vec!["arg1", "arg2", "arg3"],

@@ -54,21 +54,24 @@ impl Module {
     }
 
     pub fn start(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        if self.is_blank() {}
-        println!("Starting {} ...", self.name);
-        self.proc = Some(
-            Command::new(self.cmd.as_str())
-                .args(self.args.deref())
-                .spawn()?,
-        );
+        if let None = self.proc {
+            log::debug!("Starting {} ...", self.name);
+            self.proc = Some(
+                Command::new(self.cmd.as_str())
+                    .args(self.args.deref())
+                    .spawn()?,
+            );
+            log::debug!("Successfully started {} !", self.name);
+        }
         Ok(())
     }
 
     pub fn wait(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         if let Some(proc) = self.proc.as_mut() {
+            log::debug!("Waiting on {} ...", self.name);
             proc.wait()?;
+            log::debug!("Done waiting on {} !", self.name);
         }
-        println!("Done waiting on {} !", self.name);
         Ok(())
     }
 
@@ -109,10 +112,6 @@ impl Module {
             Some(_) => true,
             None => false,
         }
-    }
-
-    pub fn is_blank(&self) -> bool {
-        Module::new() == *self
     }
 }
 
