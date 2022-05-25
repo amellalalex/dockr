@@ -4,13 +4,12 @@ use std::{
     io::BufReader,
     ops::Deref,
     process::{Child, Command},
+    time::Instant,
 };
 
 // TODO: Put settings into JSON file
 // Settings
-const STOP_TIMEOUT: u32 = 3; // in seconds
-const STOP_REFRESH_DELAY_SECS: u32 = 1;
-const STOP_REFRESH_DELAY_NANO: u32 = 0;
+const STOP_TIMEOUT: u128 = 3000; // in milliseconds
 
 #[derive(Debug)]
 pub struct Module {
@@ -73,10 +72,17 @@ impl Module {
         Ok(())
     }
 
-    // TODO: Finish stop func
     pub fn stop(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        let start = Instant::now();
         if let Some(proc) = self.proc.as_mut() {
-            if let Some(status) = proc.try_wait()? {}
+            log::debug!("Waiting on {} with intent to kill soon...", self.name);
+            while let None = proc.try_wait()? {
+                if start.elapsed().as_millis() >= STOP_TIMEOUT {
+                    // Force stop
+                    log::debug!("Timeout elapsed, killing {} .", self.name);
+                    proc.kill()?;
+                }
+            }
         }
         Ok(())
     }
