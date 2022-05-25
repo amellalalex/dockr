@@ -11,6 +11,8 @@ use std::{
 // Settings
 const STOP_TIMEOUT: u128 = 3000; // in milliseconds
 
+type DockrResult = Result<(), Box<dyn std::error::Error>>;
+
 #[derive(Debug)]
 pub struct Module {
     name: String,
@@ -53,7 +55,7 @@ impl Module {
         Ok(Module::from(json))
     }
 
-    pub fn start(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn start(&mut self) -> DockrResult {
         if let None = self.proc {
             log::debug!("Starting {} ...", self.name);
             self.proc = Some(
@@ -66,7 +68,7 @@ impl Module {
         Ok(())
     }
 
-    pub fn wait(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn wait(&mut self) -> DockrResult {
         if let Some(proc) = self.proc.as_mut() {
             log::debug!("Waiting on {} ...", self.name);
             proc.wait()?;
@@ -75,7 +77,7 @@ impl Module {
         Ok(())
     }
 
-    pub fn stop(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn stop(&mut self) -> DockrResult {
         let start = Instant::now();
         if let Some(proc) = self.proc.as_mut() {
             log::debug!("Waiting on {} with intent to kill soon...", self.name);
@@ -92,7 +94,7 @@ impl Module {
         Ok(())
     }
 
-    pub fn run(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn run(&mut self) -> DockrResult {
         self.start()?;
         self.stop()?;
         Ok(())
@@ -144,21 +146,21 @@ impl Collection {
         Collection { modules }
     }
 
-    pub fn start_all(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn start_all(&mut self) -> DockrResult {
         for x in self.modules.iter_mut() {
             x.start()?;
         }
         Ok(())
     }
 
-    pub fn stop_all(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn stop_all(&mut self) -> DockrResult {
         for module in self.modules.iter_mut() {
             module.stop()?;
         }
         Ok(())
     }
 
-    pub fn run_all(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn run_all(&mut self) -> DockrResult {
         self.start_all()?;
         self.stop_all()?;
         Ok(())
