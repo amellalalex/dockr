@@ -165,6 +165,13 @@ impl Collection {
         self.stop_all()?;
         Ok(())
     }
+
+    pub fn wait_all(&mut self) -> DockrResult {
+        for module in self.modules.iter_mut() {
+            module.wait()?;
+        }
+        Ok(())
+    }
 }
 
 #[macro_export]
