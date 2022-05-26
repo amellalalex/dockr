@@ -1,9 +1,9 @@
 use serde::{Deserialize, Serialize};
 use std::{
-    fs::{self, File},
+    fs::File,
     io::BufReader,
     ops::Deref,
-    path::{self, Path},
+    path::Path,
     process::{Child, Command},
     time::Instant,
 };
