@@ -1,0 +1,6 @@
+[book]
+authors = ["amellalalex"]
+language = "en"
+multilingual = false
+src = "src"
+title = "Dockr Documentation"

@@ -1,0 +1,9 @@
+{
+    "name": "ACS module",
+    "cmd": "./acs.out",
+    "args": [
+        "JSON",
+        "East",
+        "Metric"
+    ]
+}
