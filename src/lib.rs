@@ -251,6 +251,18 @@ impl Collection {
         Ok(())
     }
 
+    /// Run every module contained in the `Collection`. Ideal for one-shot executions of a batch of modules.
+    ///
+    /// # Example
+    /// ```no_run
+    /// use dockr::Collection;
+    /// let mut coll = Collection::open_dir("modules")?;
+    /// coll.run_all()?;
+    /// ```
+    ///
+    /// # See also
+    /// The `.run()` method in `Module` performs a `.start()` and a `.wait()`.
+    /// The `.run_all()` method simply applies this to every module in a `Collection`.
     pub fn run_all(&mut self) -> DockrResult {
         self.start_all()?;
         self.wait_all()?;
