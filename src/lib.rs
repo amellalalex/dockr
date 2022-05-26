@@ -159,24 +159,6 @@ impl Module {
         self.wait()?;
         Ok(())
     }
-
-    pub fn print(&self) {
-        println!("Module: {}", self.name);
-        println!("Module Command: {}", self.cmd);
-        print!("Module Args: ");
-        for x in self.args.iter() {
-            print!("{}, ", x);
-        }
-        print!("\n");
-        println!("Module Process Running: {}", self.proc.is_some());
-    }
-
-    pub fn is_running(&self) -> bool {
-        match self.proc {
-            Some(_) => true,
-            None => false,
-        }
-    }
 }
 
 impl From<DockrJson> for Module {
