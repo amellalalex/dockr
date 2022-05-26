@@ -306,10 +306,27 @@ pub struct Collection {
 }
 
 impl Collection {
+    /// Returns an empty collection
     pub fn new() -> Collection {
         Collection { modules: vec![] }
     }
 
+    /// Creates a collection using user-defined arguments (not recommended).
+    ///
+    /// The `dockr::collection!()` macro is preferentially used.
+    ///
+    /// # Example
+    /// ```no_run
+    /// use dockr::Module;
+    /// use dockr::Collection;
+    ///
+    /// let module1 = Module::open("my_mod1/conf.json")?;
+    /// let module2 = Module::open("my_mod2/conf.json")?;
+    /// let mut coll = Collection::create(vec![module1, module2]);
+    /// ```
+    ///
+    /// # See also
+    /// See the `dockr::collection!()` for user-defined collections.
     pub fn create(modules: Vec<Module>) -> Collection {
         Collection { modules }
     }
@@ -348,6 +365,20 @@ impl Collection {
         Ok(coll)
     }
 
+    /// Starts all of the modules contained within the collection.
+    ///
+    /// This process occurs sequentially; first-added-first-ran basis.
+    ///
+    /// # Example
+    /// ```no_run
+    /// use dockr::Collection;
+    /// let mut coll = Collection::open_dir("modules/")?;
+    /// coll.start_all()?;
+    /// ```
+    ///
+    /// # See also
+    /// Other methods such as `.wait_all()`, `.run_all()` and `.stop_all()` pair nicely
+    /// with each other.
     pub fn start_all(&mut self) -> DockrResult {
         if self.modules.len() == 0 {
             log::warn!("Attempting to .start_all() on an empty collection. Was this intentional?");
@@ -358,9 +389,47 @@ impl Collection {
         Ok(())
     }
 
+    /// Sequentially waits for each module to terminate within `STOP_TIMEOUT` ms before killing.
+    ///
+    /// Every process is given the same timeout opportunity respectively; as such the maximum delay
+    /// for complete termination may be expected to occur within `Collection.len() * STOP_TIMEOUT` ms.
+    ///
+    /// For a custom timeout duration to be specified, see the `.stop_all_in()` method.
+    ///
+    /// # Example
+    /// ```no_stop
+    /// use dockr::Collection;
+    /// let mut coll = Collection::open_dir("modules/")?;
+    /// coll.start_all()?;
+    /// coll.stop_all()?;
+    /// ```
+    ///
+    /// # See also
+    /// For a more graceful termination, the `.wait_all()` method is available.
     pub fn stop_all(&mut self) -> DockrResult {
+        self.stop_all_in(STOP_TIMEOUT)
+    }
+
+    /// Sequentially waits for each module to terminate within `timeout` ms before killing.
+    ///
+    /// Every process is given the same timeout opportunity respectively; as such the maximum delay
+    /// for complete termination may be expected to occur within `Collection.len() * STOP_TIMEOUT` ms.
+    ///
+    /// For a standard timeout duration to be specified, see the `.stop_all()` method.
+    ///
+    /// # Example
+    /// ```no_stop
+    /// use dockr::Collection;
+    /// let mut coll = Collection::open_dir("modules/")?;
+    /// coll.start_all()?;
+    /// coll.stop_all_in(500)?; // in ms
+    /// ```
+    ///
+    /// # See also
+    /// For a more graceful termination, the `.wait_all()` method is available.
+    pub fn stop_all_in(&mut self, timeout: u128) -> DockrResult {
         for module in self.modules.iter_mut() {
-            module.stop()?;
+            module.stop_in(timeout)?;
         }
         Ok(())
     }
@@ -383,6 +452,25 @@ impl Collection {
         Ok(())
     }
 
+    /// Wait upon active modules until termination.
+    ///
+    /// This is a BLOCKING method and will stop the current thread until
+    /// ALL modules have terminated on their own.
+    ///
+    /// Modules are sequentially waited on (via `.wait()`) until every active module
+    /// has been found to have terminated.
+    ///
+    /// # Example
+    /// ```no_run
+    /// use dockr::Collection;
+    /// let mut coll = Collection::open_dir("modules")?;
+    /// coll.start_all()?;
+    /// coll.wait_all()?;
+    /// ```
+    ///
+    /// # See also
+    /// If a limited timeout period for termination is desired, the `.stop_all()` method is
+    /// available for this purpose.
     pub fn wait_all(&mut self) -> DockrResult {
         for module in self.modules.iter_mut() {
             module.wait()?;
@@ -390,11 +478,25 @@ impl Collection {
         Ok(())
     }
 
+    /// Append a module to the collection (like a vec).
     pub fn push(&mut self, module: Module) {
         self.modules.push(module);
     }
 }
 
+/// Creates a user-defined collection of modules.
+///
+/// # Example
+/// ```no_run
+/// use dockr::Module;
+/// let module1 = Module::open("my_mod1/conf.json")?;
+/// let module2 = Module::open("my_mod2/conf.json")?;
+/// let mut coll = dockr::collection!(module1, module2);
+///```
+///
+/// # See also
+/// It is possible to recursively scan directories for modules to create collections.
+/// See `Collection::open_dir()` for more info.
 #[macro_export]
 macro_rules! collection {
     ($x:expr) => {
