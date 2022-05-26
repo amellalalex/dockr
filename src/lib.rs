@@ -18,6 +18,7 @@ type DockrError = Box<dyn std::error::Error>;
 #[derive(Debug)]
 pub struct Module {
     name: String,
+    pwd: Option<String>,
     cmd: String,
     args: Vec<String>,
     proc: Option<Child>,
@@ -32,18 +33,21 @@ impl PartialEq for Module {
 impl Eq for Module {}
 
 impl Module {
+    /// Returns a blank module.
     pub fn new() -> Module {
         Module {
             name: String::new(),
+            pwd: None,
             cmd: String::new(),
             args: Vec::new(),
             proc: None,
         }
     }
 
-    pub fn create(name: &str, cmd: &str, args: Vec<&str>) -> Module {
+    pub fn create(name: &str, pwd: &str, cmd: &str, args: Vec<&str>) -> Module {
         Module {
             name: name.to_string(),
+            pwd: Some(pwd.to_string()),
             cmd: cmd.to_string(),
             args: args.into_iter().map(|arg| arg.to_string()).collect(),
             proc: None,
@@ -54,7 +58,13 @@ impl Module {
         let file = File::open(path)?;
         let rdr = BufReader::new(file);
         let json: DockrJson = serde_json::from_reader(rdr)?;
-        Ok(Module::from(json))
+        let mut module = Module::from(json);
+        if let Some(parent) = Path::new(path).parent() {
+            if let Some(workdir) = parent.to_str() {
+                module.pwd = Some(workdir.to_string());
+            }
+        }
+        Ok(module)
     }
 
     /// Searches for a valid module JSON config file within the specified directory.
@@ -94,6 +104,7 @@ impl Module {
             log::debug!("Starting {} ...", self.name);
             self.proc = Some(
                 Command::new(self.cmd.as_str())
+                    .current_dir(self.pwd.as_deref().unwrap_or("."))
                     .args(self.args.deref())
                     .spawn()?,
             );
@@ -172,6 +183,7 @@ impl From<DockrJson> for Module {
     fn from(json: DockrJson) -> Self {
         Module {
             name: json.name,
+            pwd: None,
             cmd: json.cmd,
             args: json.args,
             proc: None,
@@ -218,17 +230,12 @@ impl Collection {
             if let Ok(entry) = direntry {
                 if let (true, Some(dirpath)) = (entry.path().is_dir(), entry.path().to_str()) {
                     log::debug!("Found {} directory, attempting to open...", dirpath);
-                    if let Ok(Some(mut module)) = Module::open_dir(dirpath) {
+                    if let Ok(Some(module)) = Module::open_dir(dirpath) {
                         log::debug!(
                             "Adding {} to collection from {} directory!",
                             module.name,
                             dirpath
                         );
-                        if let Some(relative_cmd) =
-                            Path::new(dirpath).join(module.cmd.to_string()).to_str()
-                        {
-                            module.cmd = relative_cmd.to_string();
-                        }
 
                         coll.push(module);
                     }
