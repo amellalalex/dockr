@@ -12,8 +12,8 @@ use std::{
 // Settings
 const STOP_TIMEOUT: u128 = 3000; // in milliseconds
 
-type DockrResult = Result<(), Box<dyn std::error::Error>>;
-type DockrError = Box<dyn std::error::Error>;
+pub type DockrResult = Result<(), Box<dyn std::error::Error>>;
+pub type DockrError = Box<dyn std::error::Error>;
 
 #[derive(Debug)]
 pub struct Module {
