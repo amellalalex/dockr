@@ -130,7 +130,7 @@ impl Module {
 
     pub fn run(&mut self) -> DockrResult {
         self.start()?;
-        self.stop()?;
+        self.wait()?;
         Ok(())
     }
 
@@ -241,7 +241,7 @@ impl Collection {
 
     pub fn run_all(&mut self) -> DockrResult {
         self.start_all()?;
-        self.stop_all()?;
+        self.wait_all()?;
         Ok(())
     }
 
