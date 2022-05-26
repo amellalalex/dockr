@@ -1,8 +1,9 @@
 use serde::{Deserialize, Serialize};
 use std::{
-    fs::File,
+    fs::{self, File},
     io::BufReader,
     ops::Deref,
+    path::{self, Path},
     process::{Child, Command},
     time::Instant,
 };
@@ -55,6 +56,37 @@ impl Module {
         Ok(Module::from(json))
     }
 
+    /// Searches for a valid module JSON config file within the specified directory.
+    /// Only expects to find 1 JSON file. If multiple are present, only 1 module will be returned.
+    ///
+    /// # Examples
+    /// ```no_run
+    /// use dockr::Module;
+    /// let mut module = Module::open_dir(".")?;
+    /// ```
+    ///
+    /// # See also
+    /// Use `Module::open()` if the JSON config file is known.
+    pub fn open_dir(path: &str) -> Result<Option<Module>, Box<dyn std::error::Error>> {
+        let dirpath = Path::new(path);
+        if dirpath.is_dir() {
+            for direntry in dirpath.read_dir()? {
+                if let Ok(entry) = direntry {
+                    if let Some(filepath) = entry.path().to_str() {
+                        // Check for JSON extension
+                        if filepath.contains(".json") {
+                            // Try to open it
+                            if let Ok(module) = Module::open(filepath) {
+                                return Ok(Some(module));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Ok(None)
+    }
     pub fn start(&mut self) -> DockrResult {
         if let None = self.proc {
             log::debug!("Starting {} ...", self.name);
