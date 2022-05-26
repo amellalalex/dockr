@@ -184,37 +184,45 @@ impl Collection {
         Collection { modules }
     }
 
-    pub fn open(path: &str) -> Result<Collection, Box<dyn std::error::Error>> {
+    /// Recursively search the specified directory for folders containing JSON config files.
+    /// Returns a `Collection` containing the discovered modules.
+    ///
+    /// # Examples
+    /// ```no_run
+    /// use dockr::Collection;
+    /// let mut coll = Collection::open_dir(".")?;
+    /// ```
+    ///
+    /// # See also
+    /// Use `Module::open_dir()` to only search one folder for a module.
+    pub fn open_dir(path: &str) -> Result<Collection, DockrError> {
+        log::debug!("Recursively searching {} directory...", path);
+        let mut coll = Collection::new();
         let path = Path::new(path);
-        let mut modules: Vec<Module> = Vec::new();
-        for entry in path.read_dir()? {
-            if let Ok(entry) = entry {
-                // Found a folder
-                if entry.path().is_dir() {
-                    // Recurse one level down
-                    for recursed_entry in entry.path().read_dir()? {
-                        // Look for JSON file
-                        if let Some(filepath) = recursed_entry?.path().to_str() {
-                            if filepath.contains(".json") {
-                                // Try to open it
-                                if let Ok(potential_module) = Module::open(filepath) {
-                                    modules.push(potential_module);
-                                }
-                            }
+        for direntry in path.read_dir()? {
+            if let Ok(entry) = direntry {
+                if let (true, Some(dirpath)) = (entry.path().is_dir(), entry.path().to_str()) {
+                    log::debug!("Found {} directory, attempting to open...", dirpath);
+                    if let Ok(Some(mut module)) = Module::open_dir(dirpath) {
+                        log::debug!(
+                            "Adding {} to collection from {} directory!",
+                            module.name,
+                            dirpath
+                        );
+                        if let Some(relative_cmd) =
+                            Path::new(dirpath).join(module.cmd.to_string()).to_str()
+                        {
+                            module.cmd = relative_cmd.to_string();
                         }
-                    }
-                // Found a file
-                } else if let Some(filepath) = entry.path().to_str() {
-                    if filepath.contains(".json") {
-                        // Try to open it
-                        if let Ok(potential_module) = Module::open(filepath) {
-                            modules.push(potential_module);
-                        }
+
+                        coll.push(module);
+                    } else {
+                        log::debug!("No valid module found in {}. Onwards.", dirpath);
                     }
                 }
             }
         }
-        Ok(Collection::new())
+        Ok(coll)
     }
 
     pub fn start_all(&mut self) -> DockrResult {
