@@ -236,6 +236,9 @@ impl Collection {
     }
 
     pub fn start_all(&mut self) -> DockrResult {
+        if self.modules.len() == 0 {
+            log::warn!("Attempting to .start_all() on an empty collection. Was this intentional?");
+        }
         for x in self.modules.iter_mut() {
             x.start()?;
         }
