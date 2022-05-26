@@ -128,6 +128,18 @@ impl Module {
         Ok(())
     }
 
+    /// Perform a one-shot `.start()` and `.wait()` on the module.
+    /// Ideal for simple one-time executions.
+    ///
+    /// # Example
+    /// ```no_run
+    /// use dockr::Module;
+    /// let mut module = Module::open("mod.json")?;
+    /// module.run()?;
+    /// ```
+    ///
+    /// # See also
+    /// If you are interested in running a batch of modules, consider making a `Collection` and using `.run_all()`.
     pub fn run(&mut self) -> DockrResult {
         self.start()?;
         self.wait()?;
