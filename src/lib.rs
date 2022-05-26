@@ -112,11 +112,14 @@ impl Module {
     }
 
     pub fn stop(&mut self) -> DockrResult {
+        self.stop_in(STOP_TIMEOUT)
+    }
+    pub fn stop_in(&mut self, timeout: u128) -> DockrResult {
         let start = Instant::now();
         if let Some(proc) = self.proc.as_mut() {
             log::debug!("Waiting on {} with intent to kill soon...", self.name);
             while let None = proc.try_wait()? {
-                if start.elapsed().as_millis() >= STOP_TIMEOUT {
+                if start.elapsed().as_millis() >= timeout {
                     // Force stop
                     log::debug!("Timeout elapsed, killing {} .", self.name);
                     proc.kill()?;
