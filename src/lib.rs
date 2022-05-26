@@ -13,6 +13,7 @@ use std::{
 const STOP_TIMEOUT: u128 = 3000; // in milliseconds
 
 type DockrResult = Result<(), Box<dyn std::error::Error>>;
+type DockrError = Box<dyn std::error::Error>;
 
 #[derive(Debug)]
 pub struct Module {
@@ -49,7 +50,7 @@ impl Module {
         }
     }
 
-    pub fn open(path: &str) -> Result<Module, Box<dyn std::error::Error>> {
+    pub fn open(path: &str) -> Result<Module, DockrError> {
         let file = File::open(path)?;
         let rdr = BufReader::new(file);
         let json: DockrJson = serde_json::from_reader(rdr)?;
@@ -67,7 +68,7 @@ impl Module {
     ///
     /// # See also
     /// Use `Module::open()` if the JSON config file is known.
-    pub fn open_dir(path: &str) -> Result<Option<Module>, Box<dyn std::error::Error>> {
+    pub fn open_dir(path: &str) -> Result<Option<Module>, DockrError> {
         let dirpath = Path::new(path);
         if dirpath.is_dir() {
             for direntry in dirpath.read_dir()? {
