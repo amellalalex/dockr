@@ -255,6 +255,7 @@ impl Module {
                     // Force stop
                     log::debug!("Timeout elapsed, killing {} .", self.name);
                     proc.kill()?;
+                    self.proc = None;
                     break;
                 }
             }
