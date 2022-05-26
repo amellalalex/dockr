@@ -59,7 +59,7 @@ impl Module {
     ///
     /// # See also
     /// It is recommended to use JSON config files to load modules into Dockr.
-    /// Check out `::open()`, `::open_dir()` and `Collection` for more.
+    /// Check out [`Module::open()`], [`Module::open_dir()`] and [`Collection`] for more.
     pub fn create(name: &str, pwd: &str, cmd: &str, args: Vec<&str>) -> Module {
         Module {
             name: name.to_string(),
@@ -77,7 +77,7 @@ impl Module {
     ///
     /// Every config file requires the following entries to be valid:
     /// 1. "name": the human-readable name of the module.
-    /// 2. "cmd": the command to be executed upon `.start()`. *NOTE*: do not add arguments here.
+    /// 2. "cmd": the command to be executed upon [`Module::start`] . *NOTE*: do not add arguments here.
     /// 3. "args": array of arguments to be passed to cmd. See example below.
     ///
     /// # Example
@@ -95,7 +95,7 @@ impl Module {
     /// the shell (as `system()` or `eval()` would in C/JS respectively).
     ///
     /// # See also
-    /// The `::open_dir()` function operates very similarly to `::open()`, but
+    /// The [`Module::open_dir()`] function operates very similarly to [`Module::open()`], but
     /// instead accepts a directory containing a JSON config file.
     pub fn open(path: &str) -> Result<Module, DockrError> {
         let file = File::open(path)?;
@@ -115,12 +115,12 @@ impl Module {
     /// Only expects to find 1 JSON config file. If multiple are present, only 1 module
     /// will be returned (likely to be the highest ranking filename alphabetically speaking).
     ///
-    /// Although `::open()` would return an error in case of an invalid config file, `::open_dir()`
+    /// Although [`Module::open()`] would return an error in case of an invalid config file, [`Module::open_dir()`]
     /// cannot assume that a valid directory contains a valid config file. As such, the possibility
     /// of finding no such config file is handled by a return of `None`.
     ///
     /// The complications relating to dealing with `Some(Module)` return type are avoided when
-    /// preferencially working with the `Collection::open_dir()` function. See the docs thereof
+    /// preferencially working with the [`Collection::open_dir()`] function. See the docs thereof
     /// for more info.
     ///
     /// # Examples
@@ -133,7 +133,7 @@ impl Module {
     /// ```
     ///
     /// # See also
-    /// Use `Module::open()` if the JSON config file is known.
+    /// Use [`Module::open()`] if the JSON config file is known.
     pub fn open_dir(path: &str) -> Result<Option<Module>, DockrError> {
         let dirpath = Path::new(path);
         if dirpath.is_dir() {
@@ -160,7 +160,7 @@ impl Module {
     /// The `args` are passed to the child (if any) but are NOT directly pasted into
     /// the shell (as `system()` or `eval()` would in C/JS respectively).
     ///
-    /// Later on, the module may be called to `.stop()` or be `.wait()` upon. See them
+    /// Later on, the module may be called to [`Module::stop()`] or be [`Module::wait()`] upon. See them
     /// for further elaboration.
     ///
     /// # Example
@@ -190,7 +190,7 @@ impl Module {
     /// Wait upon active module until termination.
     ///
     /// This method is BLOCKING in nature and will stop the current thread until execution
-    /// is complete. For batch waiting, see `Collection.wait_all()`.
+    /// is complete. For batch waiting, see [`Collection::wait_all()`].
     ///
     /// # Example
     /// ```no_run
@@ -201,8 +201,8 @@ impl Module {
     /// ```
     ///
     /// # See also
-    /// In most simple one-shot type of executions, the `.run()` method is
-    /// conveniently composed of back-to-back `.start()` and `.wait()` methods.
+    /// In most simple one-shot type of executions, the [`Module::run()`] method is
+    /// conveniently composed of back-to-back [`Module::start()`] and [`Module::wait()`] methods.
     pub fn wait(&mut self) -> DockrResult {
         if let Some(proc) = self.proc.as_mut() {
             log::debug!("Waiting on {} ...", self.name);
@@ -215,7 +215,7 @@ impl Module {
     /// Waits `STOP_TIMEOUT` ms for active module to terminate before killing the child process.
     ///
     /// Only to be used when a module must be terminated within a pre-determined timeframe.
-    /// For a more graceful/passive closing, `.wait()` is available.
+    /// For a more graceful/passive closing, [`Module::wait()`] is available.
     ///
     /// # Example
     /// ```no_run
@@ -226,7 +226,7 @@ impl Module {
     /// ```
     ///
     /// # See also
-    /// The `.stop_in()` method is available if a custom termination period is desired.
+    /// The [`Module::stop_in()`] method is available if a custom termination period is desired.
     pub fn stop(&mut self) -> DockrResult {
         self.stop_in(STOP_TIMEOUT)
     }
@@ -234,7 +234,7 @@ impl Module {
     /// Waits `timeout` ms for active module to terminate before killing the child process.
     ///
     /// Only to be used when a module must be terminated within a pre-determined timeframe.
-    /// For a more graceful/passive closing, `.wait()` is available.
+    /// For a more graceful/passive closing, [`Module::wait()`] is available.
     ///
     /// # Example
     /// ```no_run
@@ -245,7 +245,7 @@ impl Module {
     /// ```
     ///
     /// # See also
-    /// The `.stop()` method is available if a standard termination period is desired.
+    /// The [`Module::stop()`] method is available if a standard termination period is desired.
     pub fn stop_in(&mut self, timeout: u128) -> DockrResult {
         let start = Instant::now();
         if let Some(proc) = self.proc.as_mut() {
@@ -264,7 +264,7 @@ impl Module {
         Ok(())
     }
 
-    /// Perform a one-shot `.start()` and `.wait()` on the module.
+    /// Perform a one-shot [`Module::start()`] and [`Module::wait()`] on the module.
     /// Ideal for simple one-time executions.
     ///
     /// # Example
@@ -275,7 +275,7 @@ impl Module {
     /// ```
     ///
     /// # See also
-    /// If you are interested in running a batch of modules, consider making a `Collection` and using `.run_all()`.
+    /// If you are interested in running a batch of modules, consider making a [`Collection`] and using [`Collection::run_all()`] .
     pub fn run(&mut self) -> DockrResult {
         self.start()?;
         self.wait()?;
@@ -314,7 +314,7 @@ impl Collection {
 
     /// Creates a collection using user-defined arguments (not recommended).
     ///
-    /// The `dockr::collection!()` macro is preferentially used.
+    /// The [`collection!()`] macro is preferentially used.
     ///
     /// # Example
     /// ```no_run
@@ -327,13 +327,13 @@ impl Collection {
     /// ```
     ///
     /// # See also
-    /// See the `dockr::collection!()` for user-defined collections.
+    /// See the [`collection!`] macro for user-defined collections.
     pub fn create(modules: Vec<Module>) -> Collection {
         Collection { modules }
     }
 
     /// Recursively search the specified directory for folders containing JSON config files.
-    /// Returns a `Collection` containing the discovered modules.
+    /// Returns a [`Collection`] containing the discovered modules.
     ///
     /// # Examples
     /// ```no_run
@@ -342,7 +342,7 @@ impl Collection {
     /// ```
     ///
     /// # See also
-    /// Use `Module::open_dir()` to only search one folder for a module.
+    /// Use [`Module::open_dir()`] to only search one folder for a module.
     pub fn open_dir(path: &str) -> Result<Collection, DockrError> {
         log::debug!("Recursively searching {} directory...", path);
         let mut coll = Collection::new();
@@ -378,7 +378,7 @@ impl Collection {
     /// ```
     ///
     /// # See also
-    /// Other methods such as `.wait_all()`, `.run_all()` and `.stop_all()` pair nicely
+    /// Other methods such as [`Collection::wait_all()`], [`Collection::run_all()`] and [`Collection::stop_all()`] pair nicely
     /// with each other.
     pub fn start_all(&mut self) -> DockrResult {
         if self.modules.len() == 0 {
@@ -395,7 +395,7 @@ impl Collection {
     /// Every process is given the same timeout opportunity respectively; as such the maximum delay
     /// for complete termination may be expected to occur within `Collection.len() * STOP_TIMEOUT` ms.
     ///
-    /// For a custom timeout duration to be specified, see the `.stop_all_in()` method.
+    /// For a custom timeout duration to be specified, see the [`Collection::stop_all_in()`] method.
     ///
     /// # Example
     /// ```no_stop
@@ -406,7 +406,7 @@ impl Collection {
     /// ```
     ///
     /// # See also
-    /// For a more graceful termination, the `.wait_all()` method is available.
+    /// For a more graceful termination, the [`Collection::wait_all()`] method is available.
     pub fn stop_all(&mut self) -> DockrResult {
         self.stop_all_in(STOP_TIMEOUT)
     }
@@ -416,7 +416,7 @@ impl Collection {
     /// Every process is given the same timeout opportunity respectively; as such the maximum delay
     /// for complete termination may be expected to occur within `Collection.len() * STOP_TIMEOUT` ms.
     ///
-    /// For a standard timeout duration to be specified, see the `.stop_all()` method.
+    /// For a standard timeout duration to be specified, see the [`Collection::stop_all()`] method.
     ///
     /// # Example
     /// ```no_stop
@@ -427,7 +427,7 @@ impl Collection {
     /// ```
     ///
     /// # See also
-    /// For a more graceful termination, the `.wait_all()` method is available.
+    /// For a more graceful termination, the [`Collection::wait_all()`] method is available.
     pub fn stop_all_in(&mut self, timeout: u128) -> DockrResult {
         for module in self.modules.iter_mut() {
             module.stop_in(timeout)?;
@@ -435,7 +435,7 @@ impl Collection {
         Ok(())
     }
 
-    /// Run every module contained in the `Collection`. Ideal for one-shot executions of a batch of modules.
+    /// Run every module contained in the [`Collection`]. Ideal for one-shot executions of a batch of modules.
     ///
     /// # Example
     /// ```no_run
@@ -445,8 +445,8 @@ impl Collection {
     /// ```
     ///
     /// # See also
-    /// The `.run()` method in `Module` performs a `.start()` and a `.wait()`.
-    /// The `.run_all()` method simply applies this to every module in a `Collection`.
+    /// The [`Module::run()`] method in `Module` performs a [`Module::start()`] and a [`Module::wait()`] .
+    /// The [`Collection::run_all()`] method simply applies this to every module in a [`Collection`].
     pub fn run_all(&mut self) -> DockrResult {
         self.start_all()?;
         self.wait_all()?;
@@ -458,7 +458,7 @@ impl Collection {
     /// This is a BLOCKING method and will stop the current thread until
     /// ALL modules have terminated on their own.
     ///
-    /// Modules are sequentially waited on (via `.wait()`) until every active module
+    /// Modules are sequentially waited on (via [`Module::wait()`] ) until every active module
     /// has been found to have terminated.
     ///
     /// # Example
@@ -470,7 +470,7 @@ impl Collection {
     /// ```
     ///
     /// # See also
-    /// If a limited timeout period for termination is desired, the `.stop_all()` method is
+    /// If a limited timeout period for termination is desired, the [`Collection::stop_all()`] method is
     /// available for this purpose.
     pub fn wait_all(&mut self) -> DockrResult {
         for module in self.modules.iter_mut() {
@@ -497,7 +497,7 @@ impl Collection {
 ///
 /// # See also
 /// It is possible to recursively scan directories for modules to create collections.
-/// See `Collection::open_dir()` for more info.
+/// See [`Collection::open_dir()`] for more info.
 #[macro_export]
 macro_rules! collection {
     ($x:expr) => {
