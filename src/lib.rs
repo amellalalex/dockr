@@ -228,8 +228,6 @@ impl Collection {
                         }
 
                         coll.push(module);
-                    } else {
-                        log::debug!("No valid module found in {}. Onwards.", dirpath);
                     }
                 }
             }
