@@ -87,6 +87,7 @@ impl Module {
 
         Ok(None)
     }
+
     pub fn start(&mut self) -> DockrResult {
         if let None = self.proc {
             log::debug!("Starting {} ...", self.name);
@@ -180,6 +181,39 @@ impl Collection {
 
     pub fn create(modules: Vec<Module>) -> Collection {
         Collection { modules }
+    }
+
+    pub fn open(path: &str) -> Result<Collection, Box<dyn std::error::Error>> {
+        let path = Path::new(path);
+        let mut modules: Vec<Module> = Vec::new();
+        for entry in path.read_dir()? {
+            if let Ok(entry) = entry {
+                // Found a folder
+                if entry.path().is_dir() {
+                    // Recurse one level down
+                    for recursed_entry in entry.path().read_dir()? {
+                        // Look for JSON file
+                        if let Some(filepath) = recursed_entry?.path().to_str() {
+                            if filepath.contains(".json") {
+                                // Try to open it
+                                if let Ok(potential_module) = Module::open(filepath) {
+                                    modules.push(potential_module);
+                                }
+                            }
+                        }
+                    }
+                // Found a file
+                } else if let Some(filepath) = entry.path().to_str() {
+                    if filepath.contains(".json") {
+                        // Try to open it
+                        if let Ok(potential_module) = Module::open(filepath) {
+                            modules.push(potential_module);
+                        }
+                    }
+                }
+            }
+        }
+        Ok(Collection::new())
     }
 
     pub fn start_all(&mut self) -> DockrResult {
