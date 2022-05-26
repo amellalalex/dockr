@@ -208,6 +208,10 @@ impl Collection {
         }
         Ok(())
     }
+
+    pub fn push(&mut self, module: Module) {
+        self.modules.push(module);
+    }
 }
 
 #[macro_export]
