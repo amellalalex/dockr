@@ -255,10 +255,10 @@ impl Module {
                     // Force stop
                     log::debug!("Timeout elapsed, killing {} .", self.name);
                     proc.kill()?;
-                    self.proc = None;
                     break;
                 }
             }
+            self.proc = None;
             log::debug!("Done stopping {} !", self.name);
         }
         Ok(())
