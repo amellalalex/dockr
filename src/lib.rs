@@ -44,6 +44,22 @@ impl Module {
         }
     }
 
+    /// Create a module using user-defined function arguments.
+    ///
+    /// # Example
+    /// ```no_run
+    /// use dockr::Module;
+    /// let mut module = Module::create(
+    ///     "My Module",            // name
+    ///     "modules/my_module",    // working directory
+    ///     "./my_script.sh",       // command
+    ///     vec!["arg1", "arg2"]    // args
+    /// );
+    /// ```
+    ///
+    /// # See also
+    /// It is recommended to use JSON config files to load modules into Dockr.
+    /// Check out `::open()`, `::open_dir()` and `Collection` for more.
     pub fn create(name: &str, pwd: &str, cmd: &str, args: Vec<&str>) -> Module {
         Module {
             name: name.to_string(),
@@ -54,6 +70,33 @@ impl Module {
         }
     }
 
+    /// Loads a module from a JSON config file.
+    ///
+    /// # Formatting
+    /// Basic JSON formatting and structure applies.
+    ///
+    /// Every config file requires the following entries to be valid:
+    /// 1. "name": the human-readable name of the module.
+    /// 2. "cmd": the command to be executed upon `.start()`. *NOTE*: do not add arguments here.
+    /// 3. "args": array of arguments to be passed to cmd. See example below.
+    ///
+    /// # Example
+    /// ```json
+    /// {
+    ///     "name": "my module",
+    ///     "cmd": "./my_script.sh",
+    ///     "args": ["arg1", "arg2"]
+    /// }
+    /// ```
+    ///
+    /// # Additional notes
+    /// - ALL paths are relative to the directory containing the JSON config file.
+    /// - The `args` are passed to the child (if any) but are NOT directly pasted into
+    /// the shell (as `system()` or `eval()` would in C/JS respectively).
+    ///
+    /// # See also
+    /// The `::open_dir()` function operates very similarly to `::open()`, but
+    /// instead accepts a directory containing a JSON config file.
     pub fn open(path: &str) -> Result<Module, DockrError> {
         let file = File::open(path)?;
         let rdr = BufReader::new(file);
@@ -67,13 +110,26 @@ impl Module {
         Ok(module)
     }
 
-    /// Searches for a valid module JSON config file within the specified directory.
-    /// Only expects to find 1 JSON file. If multiple are present, only 1 module will be returned.
+    /// Searches for a valid JSON config file within the specified directory.
+    ///
+    /// Only expects to find 1 JSON config file. If multiple are present, only 1 module
+    /// will be returned (likely to be the highest ranking filename alphabetically speaking).
+    ///
+    /// Although `::open()` would return an error in case of an invalid config file, `::open_dir()`
+    /// cannot assume that a valid directory contains a valid config file. As such, the possibility
+    /// of finding no such config file is handled by a return of `None`.
+    ///
+    /// The complications relating to dealing with `Some(Module)` return type are avoided when
+    /// preferencially working with the `Collection::open_dir()` function. See the docs thereof
+    /// for more info.
     ///
     /// # Examples
     /// ```no_run
     /// use dockr::Module;
-    /// let mut module = Module::open_dir(".")?;
+    /// match Module::open_dir(".")? {
+    ///     Some(module) => println!("Found module {} in dir", module.name),
+    ///     None => println!("Could not locate module in dir"),
+    /// };
     /// ```
     ///
     /// # See also
@@ -99,6 +155,24 @@ impl Module {
         Ok(None)
     }
 
+    /// Launches the module `cmd` entry as a child process of the current binary.
+    ///
+    /// The `args` are passed to the child (if any) but are NOT directly pasted into
+    /// the shell (as `system()` or `eval()` would in C/JS respectively).
+    ///
+    /// Later on, the module may be called to `.stop()` or be `.wait()` upon. See them
+    /// for further elaboration.
+    ///
+    /// # Example
+    /// ```no_run
+    /// use dockr::Module;
+    /// let mut module = Module::open("mod.json");
+    /// module.start()?;
+    /// ```
+    ///
+    /// # See also
+    /// The way in which `args` are passed to the child can be explored in more detail under
+    /// the Rust std::process documentation.
     pub fn start(&mut self) -> DockrResult {
         if let None = self.proc {
             log::debug!("Starting {} ...", self.name);
@@ -113,6 +187,22 @@ impl Module {
         Ok(())
     }
 
+    /// Wait upon active module until termination.
+    ///
+    /// This method is BLOCKING in nature and will stop the current thread until execution
+    /// is complete. For batch waiting, see `Collection.wait_all()`.
+    ///
+    /// # Example
+    /// ```no_run
+    /// use dockr::Module;
+    /// let mut module = Module::open("mod.json")?;
+    /// module.start()?;
+    /// module.wait()?;
+    /// ```
+    ///
+    /// # See also
+    /// In most simple one-shot type of executions, the `.run()` method is
+    /// conveniently composed of back-to-back `.start()` and `.wait()` methods.
     pub fn wait(&mut self) -> DockrResult {
         if let Some(proc) = self.proc.as_mut() {
             log::debug!("Waiting on {} ...", self.name);
@@ -122,9 +212,40 @@ impl Module {
         Ok(())
     }
 
+    /// Waits `STOP_TIMEOUT` ms for active module to terminate before killing the child process.
+    ///
+    /// Only to be used when a module must be terminated within a pre-determined timeframe.
+    /// For a more graceful/passive closing, `.wait()` is available.
+    ///
+    /// # Example
+    /// ```no_run
+    /// use dockr::Module;
+    /// let mut module = Module::open("mod.json")?;
+    /// module.start()?;
+    /// module.stop()?;
+    /// ```
+    ///
+    /// # See also
+    /// The `.stop_in()` method is available if a custom termination period is desired.
     pub fn stop(&mut self) -> DockrResult {
         self.stop_in(STOP_TIMEOUT)
     }
+
+    /// Waits `timeout` ms for active module to terminate before killing the child process.
+    ///
+    /// Only to be used when a module must be terminated within a pre-determined timeframe.
+    /// For a more graceful/passive closing, `.wait()` is available.
+    ///
+    /// # Example
+    /// ```no_run
+    /// use dockr::Module;
+    /// let mut module = Module::open("mod.json")?;
+    /// module.start()?;
+    /// module.stop_in(1000)?; // in ms
+    /// ```
+    ///
+    /// # See also
+    /// The `.stop()` method is available if a standard termination period is desired.
     pub fn stop_in(&mut self, timeout: u128) -> DockrResult {
         let start = Instant::now();
         if let Some(proc) = self.proc.as_mut() {
