@@ -174,7 +174,11 @@ pub struct Collection {
 }
 
 impl Collection {
-    pub fn new(modules: Vec<Module>) -> Collection {
+    pub fn new() -> Collection {
+        Collection { modules: vec![] }
+    }
+
+    pub fn create(modules: Vec<Module>) -> Collection {
         Collection { modules }
     }
 
@@ -209,9 +213,9 @@ impl Collection {
 #[macro_export]
 macro_rules! collection {
     ($x:expr) => {
-        Collection::new(vec![$x])
+        Collection::create(vec![$x])
     };
     ($x:expr, $($y:expr),+) => (
-        dockr::Collection::new(vec![$x, $($y),+])
+        dockr::Collection::create(vec![$x, $($y),+])
     )
 }
